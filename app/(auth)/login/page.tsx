@@ -37,11 +37,6 @@ export default function SignInPage() {
     startTransition(async () => {
       const result = await signInAction(formData);
 
-      if (result.success) {
-        router.push("/");
-      } else {
-        setServerError(result.error);
-      }
     });
   };
 
