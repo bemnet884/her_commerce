@@ -6,6 +6,9 @@ import { signOutAction } from "@/app/actions/auth";
 import { eq } from "drizzle-orm";
 import db from "@/db/drizzle";
 import { roles, userRoles, artistProfiles, agentProfiles } from "@/db/schema";
+import Hero from "@/components/Hero";
+import { Navbar } from "@/components/Navbar";
+import AboutPage from "@/components/About";
 
 async function getUserRoles(userId: string) {
   const userRolesData = await db
@@ -60,67 +63,7 @@ export default async function Home() {
           </div>
         </nav>
 
-        {/* Hero Section */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="text-center">
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-              Empower Your
-              <span className="text-purple-600"> Handcraft </span>
-              Business
-            </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              Connect talented women artisans with global customers. Showcase your creations,
-              manage orders, and grow your business with our dedicated platform.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
-              <Button asChild size="lg" className="text-lg px-8 py-3">
-                <Link href="/register">Start Selling Today</Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="text-lg px-8 py-3">
-                <Link href="/about">Learn More</Link>
-              </Button>
-            </div>
-          </div>
 
-          {/* Features Grid */}
-          <div className="grid md:grid-cols-3 gap-8 mt-20">
-            <div className="text-center p-6">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">For Artisans</h3>
-              <p className="text-gray-600">
-                Showcase your handmade products, manage inventory, and reach customers worldwide.
-              </p>
-            </div>
-
-            <div className="text-center p-6">
-              <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">For Agents</h3>
-              <p className="text-gray-600">
-                Help artisans without internet access to join the digital marketplace and earn commissions.
-              </p>
-            </div>
-
-            <div className="text-center p-6">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-2">For Buyers</h3>
-              <p className="text-gray-600">
-                Discover unique handmade products directly from talented women artisans around the world.
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
     );
   }
@@ -142,60 +85,6 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-8">
-              <h1 className="text-2xl font-bold text-purple-600">SheConnect+</h1>
-              <div className="hidden md:flex space-x-6">
-                <Link href="/products" className="text-gray-700 hover:text-purple-600 transition-colors">
-                  Products
-                </Link>
-                <Link href="/artists" className="text-gray-700 hover:text-purple-600 transition-colors">
-                  Artisans
-                </Link>
-                {isArtist && (
-                  <Link href="/artist/dashboard" className="text-gray-700 hover:text-purple-600 transition-colors">
-                    My Dashboard
-                  </Link>
-                )}
-                {isAgent && (
-                  <Link href="/agent/dashboard" className="text-gray-700 hover:text-purple-600 transition-colors">
-                    Agent Portal
-                  </Link>
-                )}
-                {isAdmin && (
-                  <Link href="/admin/dashboard" className="text-gray-700 hover:text-purple-600 transition-colors">
-                    Admin
-                  </Link>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">{session.user.name}</p>
-                <div className="flex space-x-1">
-                  {userRolesList.map((role) => (
-                    <span
-                      key={role}
-                      className="text-xs text-gray-500 capitalize"
-                    >
-                      {role}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <form action={signOutAction}>
-                <Button type="submit" variant="outline" size="sm">
-                  Sign Out
-                </Button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </nav>
-
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Onboarding Alerts */}
@@ -226,6 +115,7 @@ export default async function Home() {
             </div>
           </div>
         )}
+
 
         {/* Welcome Section */}
         <div className="bg-white rounded-lg shadow-sm border p-8 mb-8">

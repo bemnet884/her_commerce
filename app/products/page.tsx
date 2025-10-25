@@ -20,7 +20,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   ]);
 
   return (
-    <div className="min-h-screen bg-gray-50 mt-50">
+    <div className="min-h-screen bg-gray-50 ">
       <Navbar session={session} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <header className="mb-8">
