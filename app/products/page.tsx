@@ -1,80 +1,43 @@
-// src/app/products/page.tsx
-"use client";
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
+import { Navbar } from "./components/Navbar";
+import { SearchFilter } from "./components/SearchFilter";
+import { ProductGrid } from "./components/ProductGrid";
+import { Pagination } from "./components/Pagination";
+import { ArtistCTA } from "./components/ArtistCTA";
+import { getProducts } from "./lib/getProducts";
+import { getCategories } from "./lib/getCategories";
+import { createSafeSearchParams } from "./lib/createSafeSearchParams";
 
-import { useEffect, useState } from "react";
-import { ProductForm } from "@/components/ProductForm";
-import { ProductInput } from "@/db/(queries)/product";
+export default async function ProductsPage({ searchParams }: { searchParams: Promise<any> }) {
+  const resolved = await searchParams;
+  const safe = createSafeSearchParams(resolved);
+  const session = await auth.api.getSession({ headers: await headers() });
 
-interface Product {
-  id: number;
-  name: string;
-  artist_id: number;
-  description?: string;
-  price?: string;
-  status: string;
-}
-
-export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>([]);
-
-  const fetchProducts = async () => {
-    const res = await fetch("/api/products");
-    const data = await res.json();
-    setProducts(data);
-  };
-
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  const handleCreate = async (data: ProductInput) => {
-    try {
-      await fetch("/api/products", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      fetchProducts();
-    } catch (error) {
-      console.error("Failed to create product:", error);
-    }
-  };
+  const [{ products, totalPages, currentPage }, categories] = await Promise.all([
+    getProducts(safe),
+    getCategories(),
+  ]);
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Products</h1>
+    <div className="min-h-screen bg-gray-50 mt-50">
+      <Navbar session={session} />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <header className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Handmade Products</h1>
+          <p className="text-gray-600">Discover unique creations from talented artisans</p>
+        </header>
+        <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
+          <SearchFilter categories={categories} defaultValues={safe} />
+        </div>
+        {/*     */}
 
-      <ProductForm onSubmit={handleCreate} />
 
-      <div className="mt-6">
-        <h2 className="text-xl font-semibold mb-2">All Products</h2>
-        <ul className="space-y-2">
-          {products.map((product) => (
-            <li key={product.id} className="p-4 border rounded-md flex justify-between">
-              <div>
-                <p className="font-semibold">{product.name}</p>
-                <p>Artist ID: {product.artist_id}</p>
-                <p>Price: {product.price}</p>
-                <p>Status: {product.status}</p>
-              </div>
-              <div className="space-x-2">
-                <button className="text-blue-500">Edit</button>
-                <button
-                  className="text-red-500"
-                  onClick={async () => {
-                    await fetch(`/api/products?id=${product.id}`, {
-                      method: "DELETE",
-                    });
-                    fetchProducts();
-                  }}
-                >
-                  Delete
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
+        <ProductGrid products={products} />
+        <Pagination totalPages={totalPages} currentPage={currentPage} safeSearchParams={safe} />
+
+        {session && <ArtistCTA />}
+      </main>
     </div>
   );
 }

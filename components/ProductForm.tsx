@@ -1,105 +1,155 @@
-// src/components/ProductForm.tsx
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useState } from "react";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ProductInput } from "@/db/(queries)/product";
-import { Label } from "./ui/label";
-import { Input } from "./ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Button } from "./ui/button";
-import { Textarea } from "./ui/textarea";
-import { Controller } from "react-hook-form";
 
-// Create schema that matches ProductInput exactly
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+// ----------------------
+// ✅ Validation Schema
+// ----------------------
 const productSchema = z.object({
-  artist_id: z.number().min(1, "Artist ID is required"),
+  artist_id: z.number({ message: "Artist is required" }),
   name: z.string().min(1, "Product name is required"),
   description: z.string().optional(),
-  images: z.array(z.string()).optional(),
-  price: z.string().min(1, "Price is required"), // Keep as string to match ProductInput
-  status: z.enum(["pending", "approved", "sold"]).default("pending"),
+  images: z.string().array().optional(), // Array of URLs
+  price: z.number({ message: "Price must be a number" }),
+  quantity: z.number().min(0, "Quantity must be 0 or more"),
+  status: z.enum(["pending", "approved", "sold"]).optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
 
+// ----------------------
+// ✅ Component
+// ----------------------
 interface ProductFormProps {
-  initialValues?: Partial<ProductFormData>;
-  onSubmit: (data: ProductInput) => void;
+  artists: { id: number; name: string }[]; // Pass list of artists
 }
 
-export const ProductForm: React.FC<ProductFormProps> = ({
-  initialValues,
-  onSubmit,
-}) => {
+export default function ProductForm({ artists }: ProductFormProps) {
+  const [loading, setLoading] = useState(false);
+
   const {
     register,
     handleSubmit,
     control,
-    setValue,
-    watch,
+    reset,
     formState: { errors },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
-    defaultValues: initialValues,
+    defaultValues: { status: "pending", quantity: 0, images: [] },
   });
 
-  // Handle price input separately to convert number to string
-  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setValue("price", value);
+  const onSubmit = async (data: ProductFormData) => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Something went wrong");
+
+      alert("🎉 Product created successfully!");
+      reset();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="space-y-4 p-4 border rounded-md shadow-sm"
+      className="max-w-lg mx-auto space-y-5 p-6 border rounded-2xl shadow-sm bg-white"
     >
+      <h2 className="text-xl font-semibold text-gray-800">Create Product</h2>
+
+      {/* Artist */}
       <div>
-        <Label>Artist ID</Label>
-        <Input
-          type="number"
-          {...register("artist_id", {
-            valueAsNumber: true,
-            setValueAs: (v) => v === "" ? undefined : parseInt(v, 10)
-          })}
+        <Label>Artist</Label>
+        <Controller
+          name="artist_id"
+          control={control}
+          render={({ field }) => (
+            <Select onValueChange={(v) => field.onChange(Number(v))} value={field.value?.toString()}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select an artist" />
+              </SelectTrigger>
+              <SelectContent>
+                {artists.map((artist) => (
+                  <SelectItem key={artist.id} value={artist.id.toString()}>
+                    {artist.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         />
-        {errors.artist_id && (
-          <p className="text-red-500 text-sm">{errors.artist_id.message}</p>
-        )}
+        {errors.artist_id && <p className="text-red-500 text-sm">{errors.artist_id.message}</p>}
       </div>
 
+      {/* Name */}
       <div>
         <Label>Product Name</Label>
-        <Input {...register("name")} />
+        <Input placeholder="Ocean Waves" {...register("name")} />
         {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
       </div>
 
+      {/* Description */}
       <div>
         <Label>Description</Label>
-        <Textarea {...register("description")} />
-        {errors.description && (
-          <p className="text-red-500 text-sm">{errors.description.message}</p>
-        )}
+        <Textarea placeholder="Describe the product..." {...register("description")} />
       </div>
 
-      <div>
-        <Label>Price</Label>
+      {/* Images     <div>
+        <Label>Images (URLs, comma-separated)</Label>
         <Input
-          type="number"
-          step="0.01"
-          onChange={handlePriceChange}
+          placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
+          {...register("images", {
+            setValueAs: (v: string) =>
+              v ? v.split(",").map((url) => url.trim()) : [],
+          })}
         />
+      </div> */}
+
+
+      {/* Price */}
+      <div>
+        <Label>Price (USD)</Label>
+        <Input type="number" step="0.01" {...register("price", { valueAsNumber: true })} />
         {errors.price && <p className="text-red-500 text-sm">{errors.price.message}</p>}
       </div>
 
+      {/* Quantity */}
+      <div>
+        <Label>Quantity</Label>
+        <Input type="number" {...register("quantity", { valueAsNumber: true })} />
+        {errors.quantity && <p className="text-red-500 text-sm">{errors.quantity.message}</p>}
+      </div>
+
+      {/* Status */}
       <div>
         <Label>Status</Label>
         <Controller
           name="status"
           control={control}
-          defaultValue="pending"
           render={({ field }) => (
             <Select onValueChange={field.onChange} value={field.value}>
               <SelectTrigger>
@@ -113,12 +163,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             </Select>
           )}
         />
-        {errors.status && (
-          <p className="text-red-500 text-sm">{errors.status.message}</p>
-        )}
       </div>
 
-      <Button type="submit">Save Product</Button>
+      <Button type="submit" className="w-full" disabled={loading}>
+        {loading ? "Creating..." : "Create Product"}
+      </Button>
     </form>
   );
-};
+}

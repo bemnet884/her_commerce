@@ -9,6 +9,7 @@ export type ProductInput = {
   description?: string;
   images?: string[];
   price: string;
+  quantity: number;
   status?: "pending" | "approved" | "sold";
 };
 
@@ -17,6 +18,7 @@ export const createProduct = async (data: ProductInput) => {
     id: products.id,
     name: products.name,
     artist_id: products.artist_id,
+    quantity: products.quantity,
     status: products.status,
   });
 
@@ -45,6 +47,7 @@ export const updateProduct = async (
       id: products.id,
       name: products.name,
       artist_id: products.artist_id,
+      quantity: products.quantity,
       status: products.status,
     });
 

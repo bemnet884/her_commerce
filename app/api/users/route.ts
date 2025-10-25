@@ -18,6 +18,7 @@ const userSchema = z.object({
   email: z.string().email(),
   phone: z.string().min(1),
   role: z.enum(["artist", "agent", "admin", "buyer"]),
+  bio: z.string(),
   location: z.string().min(1),
 });
 

@@ -1,126 +1,104 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useState } from "react";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from "react";
-import { Controller } from "react-hook-form";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { signUpAction } from "@/app/actions/auth";
 
 // ----------------------
-// Validation schema
+// Validation Schema
 // ----------------------
-const userSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().email("Invalid email"),
-  phone: z.string().min(1, "Phone is required"),
-  role: z.enum(["artist", "agent", "admin", "buyer"]),
-  location: z.string().min(1, "Location is required"),
-});
+const userSchema = z
+  .object({
+    name: z.string().min(1, "Name is required"),
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string().min(6, "Confirm password is required"),
+
+    image: z.string().url("Invalid image URL").optional(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 
 type UserFormData = z.infer<typeof userSchema>;
 
+// ----------------------
+// Component
+// ----------------------
 export default function UserRegistrationForm() {
   const [loading, setLoading] = useState(false);
+
   const {
     register,
-    handleSubmit,
     control,
+    watch,
     formState: { errors },
-    reset
   } = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
-    defaultValues: {
-      role: undefined // Important for proper validation
-    }
   });
 
-  const onSubmit = async (data: UserFormData) => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || "Something went wrong");
-
-      alert("User registered successfully!");
-      reset();
-    } catch (err: any) {
-      alert(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 max-w-md mx-auto p-4">
+    <form
+      action={signUpAction}
+      className="max-w-lg mx-auto space-y-5 p-6 border rounded-2xl shadow-sm bg-white"
+      onSubmit={() => setLoading(true)}
+    >
+      <h2 className="text-xl font-semibold text-gray-800">User Registration</h2>
+
       {/* Name */}
       <div>
-        <Label className="mb-2">Name</Label>
+        <Label>Name</Label>
         <Input placeholder="Aster Kebede" {...register("name")} />
-        {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
+        {errors.name && (
+          <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
+        )}
       </div>
 
       {/* Email */}
       <div>
-        <Label className="mb-2">Email</Label>
+        <Label>Email</Label>
         <Input placeholder="aster@example.com" type="email" {...register("email")} />
-        {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
+        {errors.email && (
+          <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+        )}
       </div>
 
-      {/* Phone */}
+      {/* Password */}
       <div>
-        <Label className="mb-2">Phone</Label>
-        <Input placeholder="0911222333" {...register("phone")} />
-        {errors.phone && <p className="text-red-500 text-sm">{errors.phone.message}</p>}
+        <Label>Password</Label>
+        <Input type="password" placeholder="********" {...register("password")} />
+        {errors.password && (
+          <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+        )}
       </div>
 
-      {/* Role - Using Controller */}
-      <div className="flex items-center justify-between">
-        <div>
-          <Label className="mb-2">Role</Label>
-          <Controller
-            name="role"
-            control={control}
-            render={({ field }) => (
-              <Select onValueChange={field.onChange} value={field.value}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="artist">Artist</SelectItem>
-
-                  <SelectItem value="buyer">Buyer</SelectItem>
-                  {/**
-                   * <SelectItem value="admin">Admin</SelectItem>
-                   *  <SelectItem value="agent">Agent</SelectItem>
-                   */}
-                </SelectContent>
-              </Select>
-            )}
-          />
-          {errors.role && <p className="text-red-500 text-sm">{errors.role.message}</p>}
-        </div>
-
-        {/* Location */}
-        <div>
-          <Label className="mb-2">Location</Label>
-          <Input placeholder="Addis Ababa" {...register("location")} />
-          {errors.location && <p className="text-red-500 text-sm">{errors.location.message}</p>}
-        </div>
+      {/* Confirm Password */}
+      <div>
+        <Label>Confirm Password</Label>
+        <Input type="password" placeholder="********" {...register("confirmPassword")} />
+        {errors.confirmPassword && (
+          <p className="text-red-500 text-sm mt-1">{errors.confirmPassword.message}</p>
+        )}
       </div>
 
 
-
-      {/* Submit */}
-      <Button type="submit" disabled={loading}>
+      <Button type="submit" className="w-full" disabled={loading}>
         {loading ? "Registering..." : "Register"}
       </Button>
     </form>
